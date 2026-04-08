@@ -1,0 +1,5 @@
+{
+  "name": "Strimo",
+  "description": "A Netflix-style short-form media application with offline support, real-time updates, and cinematic UI.",
+  "requestFramePermissions": []
+}

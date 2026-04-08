@@ -1,0 +1,56 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user-specific settings and profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" }
+      },
+      "required": ["uid", "email"]
+    },
+    "WatchHistory": {
+      "title": "Watch History",
+      "description": "Records of media items the user has watched.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "mediaId": { "type": "number" },
+        "title": { "type": "string" },
+        "image": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "mediaId", "timestamp"]
+    },
+    "Watchlist": {
+      "title": "Watchlist",
+      "description": "Media items the user has saved to watch later.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "mediaId": { "type": "number" },
+        "title": { "type": "string" },
+        "image": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "mediaId", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document."
+    },
+    "/users/{userId}/history/{historyId}": {
+      "schema": "WatchHistory",
+      "description": "User watch history items."
+    },
+    "/users/{userId}/watchlist/{watchlistId}": {
+      "schema": "Watchlist",
+      "description": "User watchlist items."
+    }
+  }
+}

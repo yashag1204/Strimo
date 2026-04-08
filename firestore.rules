@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: /users/{userId}
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - displayName: string (optional)
+    //   - photoURL: string (optional)
+    //
+    // Collection: /users/{userId}/history/{historyId}
+    // Fields:
+    //   - userId: string (required)
+    //   - mediaId: number (required)
+    //   - title: string (required)
+    //   - image: string (optional)
+    //   - timestamp: string (required, ISO 8601)
+    //
+    // Collection: /users/{userId}/watchlist/{watchlistId}
+    // Fields:
+    //   - userId: string (required)
+    //   - mediaId: number (required)
+    //   - title: string (required)
+    //   - image: string (optional)
+    //   - timestamp: string (required, ISO 8601)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUserProfile(data) {
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.email is string && isValidEmail(data.email);
+    }
+
+    function isValidWatchItem(data) {
+      return hasOnlyAllowedFields(['userId', 'mediaId', 'title', 'image', 'timestamp']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.mediaId is number &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 500 &&
+             isValidDateString(data.timestamp);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserProfile(request.resource.data);
+      allow update: if isOwner(userId) && isValidUserProfile(request.resource.data);
+
+      match /history/{historyId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidWatchItem(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /watchlist/{watchlistId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidWatchItem(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
